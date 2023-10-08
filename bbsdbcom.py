@@ -241,6 +241,17 @@ def msgdialog(title,text,p=True):
     xwindow(title,1,40-(a // 2)-2,10,40+(a // 2)+2,14)
     writexy(40-(a // 2),12,cnf['dialog_text_at'],text)
   if p: pause() 
+
+def getbbsinfo(bbs):
+  dbfile = cfg['data']+bbsdbvar.prefix+'.sql'
+  conn = sqlconnect(dbfile)
+  cursor = conn.cursor()
+  cursor.execute("SELECT * FROM bbs WHERE address = '"+bbs+"'")
+  data=cursor.fetchone()
+  tempfile = cfg['temp']+'rec.txt'
+  savelist2json(data,tempfile)
+  menucmd('F3',tempfile)
+ 
   
 #load config file...
 cnf = {}

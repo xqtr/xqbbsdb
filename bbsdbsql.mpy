@@ -31,7 +31,9 @@ else:
 def dwrite(msg):
   global debug
   if debug:
-    writeln(msg)  
+    writeln(msg)
+
+
 
 def sqlinsert(body):
   dbfile = cfg['data']+bbsdbvar.prefix+'.sql'

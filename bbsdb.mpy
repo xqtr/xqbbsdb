@@ -496,6 +496,23 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
           key = key.upper()
           if key == KEY_ESCAPE:
               done = True
+          elif key == KEY_ENTER:
+              write('|#V#1#26#'+str(y1+selbar-top)+'# Options #D-Download List,G-Download BBS info,Q-Quit#')
+              ch = onekey(chr(13) + 'DGQ', False)
+              ch = ch.upper()
+              if ch == 'G':
+                bbsdbcom.clrscr()
+                gotoxy(1,2)
+                writeln('  |15BBS Database ')
+                writeln('  |04------------')
+                writeln('')
+                writeln('  |04Downloading info for BBS:')
+                writeln('  |08+  |14'+items[selbar][2])
+                writeln('|07|16')
+                writeln(' ')
+                writeln(' ')
+                bbsdbcom.getbbsinfo(items[selbar][2])
+              drawbg(name)
           elif key == '[':
               av.movepgup()
               av.drawansi()

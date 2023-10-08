@@ -20,6 +20,7 @@ debug = False
 totalsteps = 4
 version = 1
 
+
 #load config file...
 cnf = {}
 if os.path.isfile(cfg['data']+bbsdbvar.prefix+'.cfg'):
