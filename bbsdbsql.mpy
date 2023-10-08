@@ -223,6 +223,7 @@ def scrapebase(num):
   msg_seek(msg, last)
   
   dwrite('Starting scrape from post: '+str(last))
+  last = 0
   while msg_found(msg) and not shutdown():
     msghdr  = msg_gethdr(msg)
     last_msg = msghdr['number']
@@ -263,8 +264,9 @@ def scrapebase(num):
             info['mods']=[]
             sqlinsert(info)
     msg_next(msg)
+    last = msghdr['number']
   msg_close(msg)
-  cnf['base_lastpost'+str(num)]=msghdr['number']
+  cnf['base_lastpost'+str(num)]=last
   bbsdbcom.savelist2json(cnf,cfg['data']+bbsdbvar.prefix+'.cfg')
 
 bbsdbcom.clrscr()
