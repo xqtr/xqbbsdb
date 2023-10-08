@@ -17,9 +17,9 @@ dorenet;mbase;20;select * from bbs where echonets like '%surv%';|[Y16|[X37|13BBS
 retronet;mbase;20;select * from bbs where echonets like '%retro%';|[Y16|[X37|14BBSes that are part of RetroNET;retro.ans
 
 SOFTWARE ;group;20;-1
-Mystic;mbase;20;select * from bbs where system like '%mystic%';|[Y17|[X37|15Mystic BBS |07is one of the most known|[X37|[Y18BBS software of today...;mystic.ans
-Synchro;mbase;20;select * from bbs where system like '%synchro%';|[Y17|[X37|15SynchroNET BBS |07is one of the most old|[X37|[Y18BBS and well known software.;synchro.ans
-Enigma;mbase;20;select * from bbs where system like '%enigma%';|[Y17|[X37|15Enigma BBS |07is a new breeze of|[X37|[Y18BBS software of today...;enigma.ans
+Mystic;mbase;20;select * from bbs where software like '%mystic%';|[Y17|[X37|15Mystic BBS |07is one of the most known|[X37|[Y18BBS software of today...;mystic.ans
+Synchro;mbase;20;select * from bbs where software like '%synchro%';|[Y17|[X37|15SynchroNET BBS |07is one of the most old|[X37|[Y18BBS and well known software.;synchro.ans
+Enigma;mbase;20;select * from bbs where software like '%enigma%';|[Y17|[X37|15Enigma BBS |07is a new breeze of|[X37|[Y18BBS software of today...;enigma.ans
 
 OS ;group;20;-1
 Linux;mbase;20;select * from bbs where os like '%linux%';;linux.ans
