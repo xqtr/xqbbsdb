@@ -251,14 +251,20 @@ def treelist(items,x1,y1,x2,y2,hc=15,nc=7,sel=1,sb=scrollbar):
               drawbg('')
           elif key == KEY_ESCAPE:
               done = True
+          elif key == 'C' and issysop():
+              menucmd('GY',appdir+'bbsdbcfg')
+              drawbg('Sort By...')
+          elif key == 'S' and issysop():
+              menucmd('GY',appdir+'bbsdbsql')
+              bbsdbcom.pause(True)
+              drawbg('Sort By...')
           elif key == 'H':    
               write('|07|16|CL')
-              showfile(appdir+'images'+os.sep+'help.ans',0,False,False,False)
+              showfile(appdir+'images'+os.sep+'bbshelp.ans',0,False,False,False)
               if issysop():
-                  writexy(4,18,13,'/E  File Directory Editor')
-                  writexy(4,19,13,'/U  Mass Upload Files')
-                  writexy(4,20,13,'/F  File Base Editor')
-                  writexy(4,21,13,'/J  File Group Editor')
+                  writexy(4,17,4,'Sysop Commands Only...')
+                  writexy(4,18,4,'C :: for Config Editor')
+                  writexy(4,19,4,'S :: for Message Scrape Tool')
               getkey()
               drawbg('Sort By...')
     return value
@@ -266,6 +272,7 @@ def treelist(items,x1,y1,x2,y2,hc=15,nc=7,sel=1,sb=scrollbar):
 def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
     global exit_keys
     global exit_code
+    global dbfile
     redraw = True
     
     def updatebar():
@@ -278,9 +285,19 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
             y = (selbar * (y2-y1)) // (len(items)-1)
         writexy(x2,y1+y,sb["hiatt"],sb["hichar"])
     
+    if not os.path.isfile(dbfile):
+      bbsdbcom.msgdialog(' Error ','No items to display.')
+      return -1
+    
     conn = bbsdbcom.sqlconnect(dbfile)
     cursor = conn.cursor()
-    cursor.execute(sql)
+    try:
+      cursor.execute(sql)
+    except:
+      bbsdbcom.msgdialog(' Error ','No items to display.')
+      conn.close()
+      return -1
+      
     
     items = cursor.fetchall()
     
@@ -335,47 +352,63 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
             fl.write('\n')
             fl.write('\x1b[1;30mLast Seen on NetWork\n')
             fl.write('\x1b[0;37m'+items[selbar][15].rjust(width)+'\n')
-            fl.write('\x1b[1;33mName \x1b[1;30m'+chr(196)*(width-5)+chr(191)+'\n')
+            title = 'Name '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
             fl.write('\x1b[1;37m'+items[selbar][1].rjust(width)+'\n')
-            fl.write('\x1b[1;33mAddress \x1b[1;30m'+chr(196)*(width-8)+chr(191)+'\n')
+            title = 'Address '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
             fl.write('\x1b[1;37m'+items[selbar][2].rjust(width)+'\n')
-            fl.write('\x1b[1;33mLocation \x1b[1;30m'+chr(196)*(width-9)+chr(191)+'\n')
+            title = 'Location '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
             fl.write('\x1b[1;37m'+items[selbar][14].rjust(width)+'\n')
-            fl.write('\x1b[1;33mSysop \x1b[1;30m'+chr(196)*(width-6)+chr(191)+'\n')
+            title = 'Sysop '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
             fl.write('\x1b[1;37m'+items[selbar][11].rjust(width)+'\n')
-            fl.write('\x1b[1;33mSoftware \x1b[1;30m'+chr(196)*(width-9)+chr(191)+'\n')
+            title = 'Software '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
             fl.write('\x1b[1;37m'+items[selbar][17].rjust(width)+'\n')
-            fl.write('\x1b[1;33mOperating System\n')
+            title = 'Operating System '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
             fl.write('\x1b[1;37m'+items[selbar][18].rjust(width)+'\n')
-            fl.write('\x1b[1;33mNodes\n')
+            title = 'Nodes '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
             fl.write(str(items[selbar][16]).rjust(width)+'\n')
-            fl.write('Total Themes\n')
+            title = 'Total Themes '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
             fl.write(str(items[selbar][12]).rjust(width)+'\n')
-            fl.write('Total Users\n')
+            title = 'Total Users '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
             fl.write(str(items[selbar][4]).rjust(width)+'\n')
-            fl.write('Total Calls\n')
+            title = 'Total calls '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
             fl.write(str(items[selbar][8]).rjust(width)+'\n')
-            fl.write('Total Days Online\n')
+            title = 'Total Days Online '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
             fl.write(str(items[selbar][10]).rjust(width)+'\n')
-            fl.write('Calls Last 7 Days\n')
+            title = 'Calls Last 7 Days '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
             fl.write(str(items[selbar][6]).rjust(width)+'\n')
-            fl.write('Users Last 7 Days\n')
+            title = 'Users Last 7 Days '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
             fl.write(str(items[selbar][7]).rjust(width)+'\n')
-            fl.write('Echonets\n')
+            title = 'Echonets '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
             en = items[selbar][20].split(';')
             if en:
               for e in en:
                 fl.write(e.rjust(width)+'\n')
             else:
               fl.write('Not Available'.rjust(width)+'\n')
-            fl.write('Message Bases\n')
+            title = 'Message Bases '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
             en = items[selbar][19].split(';')
             if en:
               for e in en:
                 fl.write(e.rjust(width)+'\n')
             else:
               fl.write('Not Available'.rjust(width)+'\n')
-            fl.write('File Bases\n')
+            title = 'File Bases '
+            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
             en = items[selbar][13].split(';')
             if en:
               for e in en:
@@ -463,12 +496,21 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
           key = key.upper()
           if key == KEY_ESCAPE:
               done = True
+          elif key == '[':
+              av.movepgup()
+              av.drawansi()
+              redraw=False
+          elif key == ']':
+              av.movepgdn()
+              av.drawansi()
+              redraw=False
           elif key == 'H':    
               write('|07|16|CL')
-              showfile(appdir+'images'+os.sep+'help.ans',0,False,False,False)
+              showfile(appdir+'images'+os.sep+'bbshelp.ans',0,False,False,False)
               getkey()
               drawbg(name)
-            
+    
+    conn.close()
     return value    
   
 drawbg('hello')

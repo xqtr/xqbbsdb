@@ -69,30 +69,62 @@ def sqlinsert(body):
     sysoplog(255,'[bbsdbsql] Record Inserted...')
   else:
     cursor.execute("SELECT date FROM bbs WHERE address = ?", (body['address'],))
-    data = cursor.fetchone();
-    if bbsdbcom.str2date(data[0]) < datetime.datetime.now():
-      s = str("UPDATE bbs SET " +
-      "name = '"+body['name']+"', "+
-      "system = '"+body['system']+"', "+
-      "users = '"+str(body['users'])+"', "+
-      "mods = '"+bbsdbcom.list2csvline(body['mods'])+"', "+
-      "weekcalls = '"+str(body['weekcalls'])+"', "+
-      "weekusers = '"+str(body['weekusers'])+"', "+
-      "totalcalls = '"+str(body['totalcalls'])+"', "+
-      "time = '"+body['time']+"', "+
-      "days = '"+str(body['days'])+"', "+
-      "sysop = '"+body['sysop']+"', "+
-      "themes = '"+str(body['themes'])+"', "+
-      "fgroups = '"+bbsdbcom.list2csvline(body['fgroups'])+"', "+
-      "mgroups = '"+bbsdbcom.list2csvline(body['mgroups'])+"', "+
-      "echonets = '"+bbsdbcom.list2csvline(body['echonets'])+"', "+
-      "location = '"+body['location']+"', "+
-      "date = '"+body['date']+"', "+
-      "nodes = '"+str(body['nodes'])+"', "+
-      "software = '"+body['software']+"', "+
-      "os = '"+body['os']+"' "+
-      "where address = '"+str(body['address'])+"';")
-      conn.execute(s)
+    data = cursor.fetchone()
+    recdate = data[0]
+    cursor.execute("SELECT * FROM bbs WHERE address = ?", (body['address'],))
+    data = cursor.fetchone()
+    print(data)
+    bbsdbcom.pause()
+    sql = "UPDATE bbs SET "
+    if bbsdbcom.str2date(recdate) < datetime.datetime.now():
+      if body['name'] <> data[1] and data[1]==data[2]:
+        sql += "name = '"+body['name']+"', "
+      if data[3]=='unknown' and body['system']<>data[3]:
+        sql += "system = '"+body['system']+"', "
+      
+      if data[4]<>0 and data[4]<body['users']:
+        sql += "users = '"+str(body['users'])+"', "
+      
+      if data[5]=='' and body['mods']:
+        sql += "mods = '"+bbsdbcom.list2csvline(body['mods'])+"', "
+        
+      if data[6]<>0 and body['weekcalls']>data[6]:
+        sql += "weekcalls = '"+str(body['weekcalls'])+"', "
+        
+      if data[7]<>0 and body['weekusers']>data[7]:
+        "weekusers = '"+str(body['weekusers'])+"', "
+        
+      if data[8]<>0 and body['totalcalls']>data[8]:
+        "totalcalls = '"+str(body['totalcalls'])+"', "
+        
+      if data[10]<>0 and body['days']>data[10]:
+        sql += "days = '"+str(body['days'])+"', "
+        
+      if body['sysop']<>'unknown':
+        sql += "sysop = '"+body['sysop']+"', "
+        
+      if body['themes']>0:
+        sql += "themes = '"+str(body['themes'])+"', "
+        
+      if body['fgroups']:
+        sql += "fgroups = '"+bbsdbcom.list2csvline(body['fgroups'])+"', "
+      
+      if body['mgroups']:  
+        sql += "mgroups = '"+bbsdbcom.list2csvline(body['mgroups'])+"', "
+      
+      if body['echonets']:  
+        sql += "echonets = '"+bbsdbcom.list2csvline(body['echonets'])+"', "
+        
+      if body['location']<>'unknown':
+        sql += "location = '"+body['location']+"', "
+      
+      
+      sql += "nodes = '"+str(body['nodes'])+"', "
+      sql += "software = '"+body['software']+"', "
+      sql += "os = '"+body['os']+"', "
+      sql += "date = '"+body['date']+"', "
+      sql += "time = '"+body['time']+"' where address = '"+str(body['address'])+"';"
+      conn.execute(sql)
       conn.commit()
       sysoplog(255,'[bbsdbsql] Record Updated...')
     else:
@@ -113,33 +145,33 @@ def processbody(fl):
   
 def createtable():
   dbfile = cfg['data']+bbsdbvar.prefix+'.sql'
-  if os.path.isfile(dbfile)==False:
-    conn = bbsdbcom.sqlconnect(dbfile)
-    conn.execute('''CREATE TABLE IF NOT EXISTS "bbs" (
-    "id"	INTEGER NOT NULL UNIQUE,
-    "name"	TEXT,
-    "address"	TEXT UNIQUE,
-    "system"	TEXT,
-    "users"	INTEGER,
-    "mods"	TEXT,
-    "weekcalls"	INTEGER,
-    "weekusers"	INTEGER,
-    "totalcalls"	INTEGER,
-    "time"	TEXT,
-    "days"	INTEGER,
-    "sysop"	TEXT,
-    "themes"	INTEGER,
-    "fgroups"	TEXT,
-    "location"	TEXT,
-    "date"	TEXT,
-    "nodes"	INTEGER,
-    "software"	TEXT,
-    "os"	TEXT,
-    "mgroups"	TEXT,
-    "echonets"	TEXT,
-    PRIMARY KEY("id" AUTOINCREMENT)
-    );''')
-    conn.close()
+  #if os.path.isfile(dbfile)==False:
+  conn = bbsdbcom.sqlconnect(dbfile)
+  conn.execute('''CREATE TABLE IF NOT EXISTS "bbs" (
+  "id"	INTEGER NOT NULL UNIQUE,
+  "name"	TEXT,
+  "address"	TEXT UNIQUE,
+  "system"	TEXT,
+  "users"	INTEGER,
+  "mods"	TEXT,
+  "weekcalls"	INTEGER,
+  "weekusers"	INTEGER,
+  "totalcalls"	INTEGER,
+  "time"	TEXT,
+  "days"	INTEGER,
+  "sysop"	TEXT,
+  "themes"	INTEGER,
+  "fgroups"	TEXT,
+  "location"	TEXT,
+  "date"	TEXT,
+  "nodes"	INTEGER,
+  "software"	TEXT,
+  "os"	TEXT,
+  "mgroups"	TEXT,
+  "echonets"	TEXT,
+  PRIMARY KEY("id" AUTOINCREMENT)
+  );''')
+  conn.close()
 
 #searches a message base for bbsdb records. if found updates the database.
 def searchbase(num):
@@ -282,3 +314,32 @@ for base in cnf['base_id']:
   searchbase(base)
   scrapebase(base)
 
+
+#backup text
+'''
+if bbsdbcom.str2date(recdate) < datetime.datetime.now():
+      s = str("UPDATE bbs SET " +
+      "name = '"+body['name']+"', "+
+      "system = '"+body['system']+"', "+
+      "users = '"+str(body['users'])+"', "+
+      "mods = '"+bbsdbcom.list2csvline(body['mods'])+"', "+
+      "weekcalls = '"+str(body['weekcalls'])+"', "+
+      "weekusers = '"+str(body['weekusers'])+"', "+
+      "totalcalls = '"+str(body['totalcalls'])+"', "+
+      "time = '"+body['time']+"', "+
+      "days = '"+str(body['days'])+"', "+
+      "sysop = '"+body['sysop']+"', "+
+      "themes = '"+str(body['themes'])+"', "+
+      "fgroups = '"+bbsdbcom.list2csvline(body['fgroups'])+"', "+
+      "mgroups = '"+bbsdbcom.list2csvline(body['mgroups'])+"', "+
+      "echonets = '"+bbsdbcom.list2csvline(body['echonets'])+"', "+
+      "location = '"+body['location']+"', "+
+      "date = '"+body['date']+"', "+
+      "nodes = '"+str(body['nodes'])+"', "+
+      "software = '"+body['software']+"', "+
+      "os = '"+body['os']+"' "+
+      "where address = '"+str(body['address'])+"';")
+      conn.execute(s)
+      conn.commit()
+      sysoplog(255,'[bbsdbsql] Record Updated...')
+'''
