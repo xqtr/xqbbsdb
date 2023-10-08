@@ -497,10 +497,12 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
           if key == KEY_ESCAPE:
               done = True
           elif key == KEY_ENTER:
-              write('|#V#1#26#'+str(y1+selbar-top)+'# Options #D-Download List,G-Download BBS info,Q-Quit#')
-              ch = onekey(chr(13) + 'DGQ', False)
+              write('|#V#1#26#'+str(y1+selbar-top)+'# Options #T-Telnet,D-Download List,G-Download BBS info,Q-Quit#')
+              ch = onekey(chr(13) + 'TDGQ', False)
               ch = ch.upper()
-              if ch == 'G':
+              if ch == 'T':
+                bbsdbcom.connect_bbs(items[selbar][2])
+              elif ch == 'G':
                 bbsdbcom.clrscr()
                 gotoxy(1,2)
                 writeln('  |15BBS Database ')

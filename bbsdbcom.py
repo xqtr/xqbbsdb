@@ -252,6 +252,12 @@ def getbbsinfo(bbs):
   savelist2json(data,tempfile)
   menucmd('F3',tempfile)
  
+def connect_bbs(addr):
+  if addr.find(':')>0:
+    ad=addr.split(':')
+    menucmd('IT','/addr='+ad[0]+' /port='+ad[1])
+  else:
+    menucmd('IT','/addr='+addr)
   
 #load config file...
 cnf = {}
