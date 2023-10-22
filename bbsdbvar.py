@@ -55,7 +55,7 @@ mods['gy-greed.mps']='Greed Gryphon'
                 ==== /______\/   /==\_____// =/______\\==
                 ::::::::::://____\:::::::::::::::::::::::
                 =========================================
-                            Iner-BBS Database
+                            Inter-BBS Database
                 -----------------------------------------
                             Another Droid BBS
                          andr01d.zapto.org:9999

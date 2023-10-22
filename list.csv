@@ -10,6 +10,17 @@
 #name;vbase;acs;file[;description]
 
 
+ALL BBSes ;group;20;-1
+Alphabetical (ASC);mbase;20;select * from bbs order by name asc;|[Y16|12     Show BBSes in Alphabetical order ASCENDING;bbs.ans
+Alphabetical (DES);mbase;20;select * from bbs order by name desc;|[Y16|12     Show BBSes in Alphabetical order DESCENDING;bbs.ans
+Node num (ASC);mbase;20;select * from bbs order by nodes asc;|[Y16|12       Show BBSes with most nodes available        ;bbs.ans
+Node num (DES);mbase;20;select * from bbs order by nodes desc;|[Y16|12       Show BBSes with less nodes available         ;bbs.ans
+Most recent...;mbase;20;select * from bbs order by date desc;|[Y16|12           Most recently updated BBSes;bbs.ans
+Most Users...;mbase;20;select * from bbs order by users desc;|[Y16|12        BBSes with the most registered Users;bbs.ans
+Most Calls;mbase;20;select * from bbs order by totalcalls desc;|[Y16|12             BBSes with the most calls;bbs.ans
+With WebPages;mbase;20;select * from bbs where web<>'';|[Y16|12          BBSes that also have a webpage;bbs.ans
+Have DialUp;mbase;20;select * from bbs where dialup<>'';|[Y16|12       BBSes that also have a dialup connection;bbs.ans
+
 ECHONET ;group;20;1
 fsxnet;mbase;20;select * from bbs where echonets like '%fsx%';|[Y16|[X39|09BBSes that are part of FSXNET;fsx.ans
 zeronet;mbase;20;select * from bbs where echonets like '%zero%';|[Y16|[X37|04BBSes that are part of Zer0NET;zero.ans
@@ -31,11 +42,6 @@ Europe;mbase;20;select * from bbs where location like '%europe%';;europe.ans
 USA;mbase;20;select * from bbs where location like '%usa%';;usa.ans
 Asia;mbase;20;select * from bbs where location like '%asia%';;asia.ans
 
-OTHER ;group;20;-1
-Alphabetical (ASC);mbase;20;select * from bbs order by name asc;|[Y16|12     Show BBSes in Alphabetical order ASCENDING;bbs.ans
-Alphabetical (DES);mbase;20;select * from bbs order by name desc;|[Y16|12     Show BBSes in Alphabetical order DESCENDING;bbs.ans
-Node num (ASC);mbase;20;select * from bbs order by nodes asc;|[Y16|12       Show BBSes with most nodes available        ;bbs.ans
-Node num (DES);mbase;20;select * from bbs order by nodes desc;|[Y16|12       Show BBSes with less nodes available         ;bbs.ans
-Most recent...;mbase;20;select * from bbs order by date desc;|[Y16|12           Most recently updated BBSes;bbs.ans
-Most Users...;mbase;20;select * from bbs order by users desc;|[Y16|12        BBSes with the most registered Users;bbs.ans
-Most Calls;mbase;20;select * from bbs order by totalcalls desc;|[Y16|12             BBSes with the most calls;bbs.ans
+ADMIN ;group;255;-1
+Clear Database;mbase;255;[ASK]delete from bbs;;bbs.ans
+Drop Table;mbase;255;[ASK]drop table bbs;;bbs.ans

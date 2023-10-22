@@ -42,10 +42,11 @@ def sqlinsert(body):
   cursor.execute("SELECT count(*) FROM bbs WHERE address = '"+body['address']+"'")
   data=cursor.fetchone()[0]
   if data==0 or data==None:
+    if not body['login']: body['login']=''
     conn.execute('INSERT INTO "main"."bbs" '+
     '("name", "address", "system", "users", "mods", "weekcalls", "weekusers", '+
     '"totalcalls", "time", "days", "sysop", "themes", "fgroups", "location", "date", '+
-    '"nodes", "software", "os", "mgroups", "echonets") '+
+    '"nodes", "software", "os", "mgroups", "echonets","email","dialup","web","login") '+
     'VALUES '+
     '(\''+body['name']+'\', '+
     '\''+body['address']+'\', '+
@@ -66,7 +67,11 @@ def sqlinsert(body):
     '\''+body['software']+'\', '+
     '\''+body['os']+'\', '+
     '\''+bbsdbcom.list2csvline(body['mgroups']) +'\', '+
-    '\''+bbsdbcom.list2csvline(body['echonets'])+'\')')
+    '\''+bbsdbcom.list2csvline(body['echonets']) +'\', '+
+    '\''+body['email']+'\', '+
+    '\''+body['dialup']+'\', '+
+    '\''+str(body['web'])+'\', '+
+    '\''+str(body['login'])+'\')')
     conn.commit()
     sysoplog(255,'[bbsdbsql] Record Inserted...')
   else:
@@ -102,6 +107,18 @@ def sqlinsert(body):
         
       if body['sysop']<>'unknown':
         sql += "sysop = '"+body['sysop']+"', "
+        
+      if body['email']:
+        sql += "email = '"+body['email']+"', "
+        
+      if body['web']:
+        sql += "web = '"+body['web']+"', "
+        
+      if body['login']:
+        sql += "login = '"+body['login']+"', "
+        
+      if body['dialup']:
+        sql += "dialup = '"+body['dialup']+"', "
         
       if body['themes']>0:
         sql += "themes = '"+str(body['themes'])+"', "
@@ -169,6 +186,10 @@ def createtable():
   "os"	TEXT,
   "mgroups"	TEXT,
   "echonets"	TEXT,
+  "email"	TEXT,
+  "dialup"	TEXT,
+  "web"	TEXT,
+  "login"	TEXT,
   PRIMARY KEY("id" AUTOINCREMENT)
   );''')
   conn.close()
@@ -285,6 +306,10 @@ def scrapebase(num):
             info['sysop'] = 'unknown'
             info['software'] = 'unknown'
             info['os'] = 'unknown'
+            info['email'] = ''
+            info['dialup'] = ''
+            info['web'] = ''
+            info['login'] = ''
             info['totalcalls'] = 0
             info['weekcalls'] = 0
             info['weekusers'] = 0

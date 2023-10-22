@@ -9,6 +9,7 @@ import binascii
 import json
 import os
 import sqlite3
+import csv
 
 box12=('|04'+chr(254),'|04'+chr(223),'|15'+chr(220),'|04'+chr(221),'|04'+chr(222),'|14'+chr(254),'|04'+chr(220),'|04'+chr(254),'|16'+' ')
 cfg = getcfg()
@@ -251,6 +252,125 @@ def getbbsinfo(bbs):
   tempfile = cfg['temp']+'rec.txt'
   savelist2json(data,tempfile)
   menucmd('F3',tempfile)
+  
+def exportdb2csv(sql):
+  dbfile = cfg['data']+bbsdbvar.prefix+'.sql'
+  conn = sqlconnect(dbfile)
+  cursor = conn.cursor()
+  cursor.execute(sql)
+  tempfile = cfg['temp']+'list.csv'
+  with open(tempfile, 'w') as csv_file: 
+    csv_writer = csv.writer(csv_file)
+    csv_writer.writerow([i[0] for i in cursor.description]) 
+    csv_writer.writerows(cursor)
+  conn.close()
+  menucmd('F3',tempfile)
+  
+def exportdb2magi(sql):
+  '''
+  [20 For Beers BBS]
+  address = 20forbeers.com 
+  port = 1338 
+'''
+  dbfile = cfg['data']+bbsdbvar.prefix+'.sql'
+  conn = sqlconnect(dbfile)
+  cursor = conn.cursor()
+  cursor.execute(sql)
+  tempfile = cfg['temp']+'magiterm.ini'
+  with open(tempfile, 'w') as ini: 
+    for row in cursor:
+      addr = row[2].split(':')
+      if len(addr)<2: 
+        port = 23
+      else:
+        port=addr[1]
+      ini.write('['+row[1].split(':')[0]+']\n')
+      ini.write('address = '+addr[0]+'\n')
+      ini.write('port = '+str(port)+'\n')
+      ini.write('\n')
+  conn.close()
+  menucmd('F3',tempfile)
+  
+def exportdb2sync(sql):
+  dbfile = cfg['data']+bbsdbvar.prefix+'.sql'
+  conn = sqlconnect(dbfile)
+  cursor = conn.cursor()
+  cursor.execute(sql)
+  tempfile = cfg['temp']+'syncterm.lst'
+  with open(tempfile, 'w') as ini: 
+    ini.write('Port           =23\n')
+    ini.write('ConnectionType =Telnet\n')
+    ini.write('DownloadPath   =\n')
+    ini.write('UploadPath     =\n')
+    ini.write('Password       =\n')
+    ini.write('ScreenMode     =80x25\n')
+    ini.write('NoStatus       =true\n')
+    ini.write('ANSIMusic      =1\n')
+    ini.write('Font           =Codepage 437 English\n')
+    ini.write('\n')
+    for row in cursor:
+      addr = row[2].split(':')
+      if len(addr)<2: 
+        port = 23
+      else:
+        port=addr[1]
+      ini.write('['+row[1].split(':')[0]+']\n')
+      ini.write('  Address        ='+addr[0]+'\n')
+      ini.write('  Port           ='+str(port)+'\n')
+      ini.write('  ConnectionType =Telnet\n')
+      ini.write('  NoStatus       =true\n')
+      ini.write('\n')
+  conn.close()
+  menucmd('F3',tempfile)
+  
+  
+def exportdbfull(sql):
+  dbfile = cfg['data']+bbsdbvar.prefix+'.sql'
+  conn = sqlconnect(dbfile)
+  cursor = conn.cursor()
+  cursor.execute(sql)
+  tempfile = cfg['temp']+'fulllist.txt'
+  with open(tempfile, 'w') as ini: 
+    for row in cursor:
+      addr = row[2].split(':')
+      if len(addr)<2: 
+        port = 23
+      else:
+        port=addr[1]
+      ini.write('--------------------------------------------------------------------------\n')
+      ini.write('    '+row[1].split(':')[0]+'\n')
+      ini.write('    Last Updated: '+row[15]+'\n')
+      ini.write('\n')
+      ini.write('    Telnet: '+row[2]+'\n')
+      ini.write('       WEB: '+row[23]+'\n')
+      ini.write('     Email: '+row[21]+'\n')
+      ini.write('  Location: '+row[14]+'\n')
+      ini.write('   Dial-Up: '+row[22]+'\n')
+      ini.write('  Software: '+row[17]+'\n')
+      ini.write('     Nodes: '+str(row[16])+'\n')
+      ini.write('     Login: '+row[24]+'\n')
+      ini.write('\n')
+  conn.close()
+  menucmd('F3',tempfile)
+  
+def exportdbshort(sql):
+  dbfile = cfg['data']+bbsdbvar.prefix+'.sql'
+  conn = sqlconnect(dbfile)
+  cursor = conn.cursor()
+  cursor.execute(sql)
+  tempfile = cfg['temp']+'short.txt'
+  with open(tempfile, 'w') as ini: 
+    ini.write('\n')
+    for row in cursor:
+      addr = row[2].split(':')
+      if len(addr)<2: 
+        port = 23
+      else:
+        port=addr[1]
+      ini.write(row[1].split(':')[0].ljust(39)+row[2].ljust(40)+'\n')
+    ini.write('\n')
+  conn.close()
+  menucmd('F3',tempfile)
  
 def connect_bbs(addr):
   if addr.find(':')>0:
@@ -286,7 +406,7 @@ savelist2json(conf,'/home/x/mys47b/data/xqbbsdat.cfg')
                 ==== /______\/   /==\_____// =/______\\==
                 ::::::::::://____\:::::::::::::::::::::::
                 =========================================
-                            Iner-BBS Database
+                            Inter-BBS Database
                 -----------------------------------------
                             Another Droid BBS
                          andr01d.zapto.org:9999
