@@ -30,7 +30,18 @@ else:
   logerror('Could not load config file ['+cfg['data']+bbsdbvar.prefix+'.cfg]. Make sure it exists.')
   writeln('Could not load config file ['+cfg['data']+bbsdbvar.prefix+'.cfg]. Make sure it exists.')
   
-scrollbar = {"enable":True,"hichar":chr(178),"lochar":chr(177),"hiatt":12,"loatt":4}
+theme = {}
+themedir=appdir+'images'+os.sep+cnf['theme']+os.sep
+themefile=themedir+'theme.json'
+
+if os.path.isfile(themefile):
+  theme = bbsdbcom.loadjson2list(themefile)
+
+try:
+  scrollbar = {"enable":True,"hichar":chr(theme['scrollbar_hichar']),"lochar":chr(theme['scrollbar_lochar']),"hiatt":theme['scrollbar_hiat'],"loatt":theme['scrollbar_loat']}
+except:
+  scrollbar = {"enable":True,"hichar":chr(178),"lochar":chr(177),"hiatt":12,"loatt":4}
+  
 KEY_UP       = chr(72)       # Some keyboard code defines returned by input functions
 KEY_DOWN     = chr(80)
 KEY_ESCAPE   = chr(27)
@@ -46,13 +57,51 @@ KEY_CTRLA   = chr(1)
 KEY_CTRLR   = chr(18)
 KEY_CTRLZ   = chr(26)
 
+colors = {
+ 'r':"\033[0m",
+  0:"\033[0;30m",
+  1:"\033[0;34m",
+  2:"\033[0;32m",
+  3:"\033[0;36m",
+  4:"\033[0;31m",
+  5:"\033[0;35m",
+  6:"\033[0;33m",
+  7:"\033[0;37m",
+  8:"\033[1;30m",
+  9:"\033[1;34m",
+  10:"\033[1;32m",
+  11:"\033[1;36m",
+  12:"\033[1;31m",
+  13:"\033[1;35m",       
+  14:"\033[1;33m",
+  15:"\033[1;37m",
+  16:"\033[40m",
+  17:"\033[44m",
+  18:"\033[42m",
+  19:"\033[46m",
+  20:"\033[41m",
+  21:"\033[45m",
+  22:"\033[43m",      
+  23:"\033[47m"
+}
+
+def attr2ansi(a):
+    c = a % 16
+    d = a // 16
+    fg = ''
+    bg = ''
+    fg = colors[c]
+    bg = colors[d+16]
+    return fg+bg
+
 def issysop():
   if user['level'] >= sysop_level:
     return True
   else:
     return False
 
-def cleararea(x1,y1,x2,y2,bg):
+def cleararea(dim,bg):
+  x1,y1,x2,y2 = dim[0], dim[1], dim[2], dim[3]
   for i in range(y2-y1):
     gotoxy(x1,y1+i)
     write(bg*(x2-x1+1))
@@ -65,13 +114,17 @@ def writexy(x,y,a,s):
   textcolor(a)
   write(s)
 
-def drawbg(name,fl=None):
+def drawbg(name,fl=None,main=True):
+  global theme,themedir,themefile
   write('|07|16|CL')
   if fl:
-    showfile(appdir+'images'+os.sep+fl,0,False,False,False)
+    showfile(themedir+fl,0,False,False,False)
   else:
-    showfile(appdir+'images'+os.sep+'main.ans',0,False,False,False)
-  writexy(cnf['tree_title_x'],cnf['tree_title_y'],cnf['tree_title_at'],name[:cnf['tree_x2']-cnf['tree_x1']-1])
+    showfile(themedir+'main.ans',0,False,False,False)
+  if main:
+    writexy(theme['mainlist_title'][0],theme['mainlist_title'][1],theme['mainlist_title'][2],name[:theme['main_list'][2]-theme['main_list'][0]-1])
+  else:
+    writexy(theme['bbstree_title'][0],theme['bbstree_title'][1],theme['bbstree_title'][2],name[:theme['bbs_tree'][2]-theme['bbs_tree'][0]-1])
 
 def loadlist(fl):
   res = []
@@ -105,16 +158,36 @@ def replacevars(s):
   f = f.replace('{theme}',getcfg()['theme'])
   f = f.replace('{deftheme}',getcfg()['deftheme'])
   return f
+  
+def selecttheme():
+  global theme,themedir,themefile,scrollbar
+  boxs=''
+  keys=''
+  thms = os.listdir(appdir+'images')
+  for i,a in enumerate(thms):
+    boxs += str(i)+'-'+a+','
+    keys += str(i)
+  write('|#V#1#26#'+str(10)+'# Select Theme #'+boxs+'Q-Quit#')
+  ch = onekey(chr(13) + keys+'Q', False)
+  ch = ch.upper()
+  if not ch == 'Q':
+    themedir=appdir+'images'+os.sep+thms[int(ch)]+os.sep
+    themefile=themedir+'theme.json'
+    theme = bbsdbcom.loadjson2list(themefile)
+    try:
+      scrollbar = {"enable":True,"hichar":chr(theme['scrollbar_hichar']),"lochar":chr(theme['scrollbar_lochar']),"hiatt":theme['scrollbar_hiat'],"loatt":theme['scrollbar_loat']}
+    except:
+      scrollbar = {"enable":True,"hichar":chr(178),"lochar":chr(177),"hiatt":12,"loatt":4}
 
 def treelist(items,x1,y1,x2,y2,hc=15,nc=7,sel=1,sb=scrollbar):
     global exit_keys
     global exit_code
     global cnf
+    global theme,themedir,themefile,scrollbar
     
     search_txt = ''
-    search_x = 12
-    search_y = 23
-    search_cl= 8
+    search_x, search_y, search_cl, search_width = theme['main_search'][0],theme['main_search'][1],theme['main_search'][2],theme['main_search_width']
+    search_index = 0
     
     def updatebar():
         if sb["enable"] == False: Return
@@ -152,30 +225,33 @@ def treelist(items,x1,y1,x2,y2,hc=15,nc=7,sel=1,sb=scrollbar):
         while y1+y-top<=y2:
             if y<len(items):
                 if items[y]['type'] == 'group':
-                    writexy(x1,y1+y-top,cnf['group_cl'],items[y]['name'].ljust(x2-x1, chr(cnf['group_fill_ch']))[:x2-x1])
+                    writexy(x1,y1+y-top,theme['group_cl'],items[y]['name'].ljust(x2-x1, chr(theme['group_fill_ch']))[:x2-x1])
                 elif items[y]['type'] == 'mbase':
-                    writexy(x1,y1+y-top,cnf['mbase_cl'],items[y]['name'].ljust(x2-x1, " ")[:x2-x1])
+                    writexy(x1,y1+y-top,theme['mbase_cl'],items[y]['name'].ljust(x2-x1, " ")[:x2-x1])
                 elif items[y]['type'] == 'vbase':
-                    writexy(x1,y1+y-top,cnf['vbase_cl'],items[y]['name'].ljust(x2-x1, " ")[:x2-x1])
+                    writexy(x1,y1+y-top,theme['vbase_cl'],items[y]['name'].ljust(x2-x1, " ")[:x2-x1])
             else:
                 writexy(x1,y1+y-top,nc," ".ljust(x2-x1, " ")[:x2-x1])
             y += 1
         if items[selbar]['type'] == 'vbase':
-            writexy(x1,y1+selbar-top,cnf['vbase_clsel'],items[selbar]['name'].ljust(x2-x1, " ")[:x2-x1])
+            writexy(x1,y1+selbar-top,theme['vbase_clsel'],items[selbar]['name'].ljust(x2-x1, " ")[:x2-x1])
         elif items[selbar]['type'] == 'mbase':
-            writexy(x1,y1+selbar-top,cnf['mbase_clsel'],items[selbar]['name'].ljust(x2-x1, " ")[:x2-x1])
+            writexy(x1,y1+selbar-top,theme['mbase_clsel'],items[selbar]['name'].ljust(x2-x1, " ")[:x2-x1])
         textcolor(7)
-        cleararea(cnf['view_x1'],cnf['view_y1'],cnf['view_x2'],cnf['view_y2'],' ')
+        if theme['enable_bbs_image']:
+            cleararea(theme['desc_view'],' ')
 
         ddesc = items[selbar].get('desc')
-        if ddesc:
-            gotoxy(27,10)
-            write(ddesc)
-        if items[selbar].get('image'):
-          with open(appdir+'logos'+os.sep+items[selbar]['image'],'r') as fl:
-            lines = fl.read().splitlines()
-          for i,ln in enumerate(lines):
-            writexy(27,4+i,7,ln)       
+        
+        if theme['enable_bbs_image']:
+            if ddesc:
+                gotoxy(27,10)
+                write(ddesc)
+            if items[selbar].get('image'):
+              with open(appdir+'logos'+os.sep+items[selbar]['image'],'r') as fl:
+                lines = fl.read().splitlines()
+              for i,ln in enumerate(lines):
+                writexy(27,4+i,7,ln)       
         
         updatebar()
         gotoxy(1,25)
@@ -249,38 +325,85 @@ def treelist(items,x1,y1,x2,y2,hc=15,nc=7,sel=1,sb=scrollbar):
           key = key.upper()
           if key == KEY_ENTER:
               value = selbar
-              if items[selbar]['type'] == 'mbase':
-                  bbstree(items[selbar]['name'],items[selbar]['sql'],cnf['tree_x1'],cnf['tree_y1'],cnf['tree_x2'],cnf['tree_y2'],cnf['mbase_clsel'],cnf['mbase_cl'])
+              if items[selbar]['type'] == 'mbase': #(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
+                  bbstree(items[selbar]['name'],items[selbar]['sql'],theme['bbs_tree'][0],theme['bbs_tree'][1],theme['bbs_tree'][2],theme['bbs_tree'][3],theme['mbase_clsel'],theme['mbase_cl'],0,scrollbar)
+                  sb=scrollbar
+              x1,y1,x2,y2 = theme['main_list'][0],theme['main_list'][1],theme['main_list'][2],theme['main_list'][3]
+              search_x, search_y, search_cl, search_width = theme['main_search'][0],theme['main_search'][1],theme['main_search'][2],theme['main_search_width']
               drawbg('     DATABASE')
+          elif key == 'T':
+              selecttheme()
+              sb=scrollbar
+              x1,y1,x2,y2 = theme['main_list'][0],theme['main_list'][1],theme['main_list'][2],theme['main_list'][3]
+              search_x, search_y, search_cl,search_width = theme['main_search'][0],theme['main_search'][1],theme['main_search'][2],theme['main_search_width']
+              drawbg(' Sort By...','bbstree.ans',False)
           elif key == KEY_ESCAPE:
               done = True
+          elif key == 'A':
+              if search_text:
+                  writexy(search_x,search_y,search_cl,search_text.ljust(theme['main_search_width'],' ').upper())
+                  search_text = search_text.upper()
+                  ind = search_index+1
+                  while ind<len(items) and not shutdown():
+                      if search_text in items[ind]['name'].upper():
+                          selbar = ind
+                          top  = ind
+                          search_index = ind
+                          break
+                      ind += 1
+          elif key == 'Y':
+              search_text = ''
+              search_index = 1
+              writexy(search_x,search_y,search_cl,' '*(theme['main_search_width']))
+          elif key == 'Q':
+              gotoxy(search_x,search_y)
+              textcolor(search_cl)
+              search_text = getstr(1,13,13,'')
+              if search_text:
+                  search_index = 1
+                  writexy(search_x,search_y,search_cl,search_text.ljust(theme['main_search_width'],' ').upper())
+                  search_text = search_text.upper()
+                  ind = search_index
+                  while ind<len(items) and not shutdown():
+                      if search_text in items[ind]['name'].upper():
+                          selbar = ind
+                          top  = ind
+                          search_index = ind
+                          break
+                      ind += 1
+                
           elif key == 'C' and issysop():
               menucmd('GY',appdir+'bbsdbcfg')
-              drawbg(' Sort By...','bbstree.ans')
+              drawbg(' Sort By...','bbstree.ans',False)
           elif key == 'P' and issysop():
               menucmd('GY',appdir+'bbsdblog')
-              drawbg(' Sort By...','bbstree.ans')
+              drawbg(' Sort By...','bbstree.ans',False)
           elif key == 'S' and issysop():
               menucmd('GY',appdir+'bbsdbsql')
               bbsdbcom.pause(True)
-              drawbg(' Sort By...','bbstree.ans')
+              drawbg(' Sort By...','bbstree.ans',False)
           elif key == 'H':    
               write('|07|16|CL')
-              showfile(appdir+'images'+os.sep+'bbshelp.ans',0,False,False,False)
+              showfile(themedir+'bbshelp.ans',0,False,False,False)
               if issysop():
                   writexy(4,17,4,'Sysop Commands Only...')
                   writexy(4,18,4,'C :: for Config Editor')
                   writexy(4,19,4,'S :: for Message Scrape Tool')
                   writexy(4,20,4,'P :: for Sending a Ping Post')
               getkey()
-              drawbg(' Sort By...','bbstree.ans')
+              drawbg(' Sort By...','bbstree.ans',False)
     return value
 
 def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
     global exit_keys
     global exit_code
     global dbfile
+    global theme,themedir,themefile,scrollbar
     redraw = True
+    
+    search_text = ''
+    search_x, search_y, search_cl,search_width = theme['bbs_search'][0],theme['bbs_search'][1],theme['bbs_search'][2],theme['bbs_search_width']
+    search_index = 0
     
     def updatebar():
         if sb["enable"] == False: Return
@@ -342,9 +465,9 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
     else:
         selbar = 0
     
-    drawbg(' '+name,'bbstree.ans')
-    width = cnf['view_x2']-cnf['view_x1']
-    cleararea(cnf['view_x1'],cnf['view_y1'],cnf['view_x2'],cnf['view_y2'],' ')
+    drawbg(' '+name,'bbstree.ans',False)
+    width = theme['detail_view'][2]-theme['detail_view'][0]
+    cleararea(theme['detail_view'],' ')
     while done == False and not shutdown():
         gotoxy(x1,y1)
         y = top
@@ -370,61 +493,61 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
           tempfile = cfg['temp']+'tmp.ans'
           with open(tempfile,'w') as fl:
             fl.write('\n')
-            fl.write('\x1b[1;30mLast Seen on NetWork\n')
-            fl.write('\x1b[0;37m'+items[selbar][15].rjust(width)+'\n')
+            fl.write(attr2ansi(theme['ansi_lastseen'])+'Last Seen on NetWork\n')
+            fl.write(attr2ansi(theme['ansi_div'])+items[selbar][15].rjust(width)+'\n')
             title = 'Name '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
-            fl.write('\x1b[1;37m'+items[selbar][1].rjust(width)+'\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+'\n')
+            fl.write(attr2ansi(theme['ansi_desc'])+items[selbar][1].rjust(width)+'\n')
             title = 'Address '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
-            fl.write('\x1b[1;37m'+items[selbar][2].rjust(width)+'\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+'\n')
+            fl.write(attr2ansi(theme['ansi_desc'])+items[selbar][2].rjust(width)+'\n')
             title = 'Webpage '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
-            fl.write('\x1b[1;37m'+items[selbar][23].rjust(width)+'\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+'\n')
+            fl.write(attr2ansi(theme['ansi_desc'])+items[selbar][23].rjust(width)+'\n')
             title = 'DialUp '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
-            fl.write('\x1b[1;37m'+items[selbar][22].rjust(width)+'\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+'\n')
+            fl.write(attr2ansi(theme['ansi_desc'])+items[selbar][22].rjust(width)+'\n')
             title = 'Location '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
-            fl.write('\x1b[1;37m'+items[selbar][14].rjust(width)+'\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+'\n')
+            fl.write(attr2ansi(theme['ansi_desc'])+items[selbar][14].rjust(width)+'\n')
             title = 'Sysop '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
-            fl.write('\x1b[1;37m'+items[selbar][11].rjust(width)+'\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+'\n')
+            fl.write(attr2ansi(theme['ansi_desc'])+items[selbar][11].rjust(width)+'\n')
             title = 'Login '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
-            fl.write('\x1b[1;37m'+items[selbar][24].rjust(width)+'\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+'\n')
+            fl.write(attr2ansi(theme['ansi_desc'])+items[selbar][24].rjust(width)+'\n')
             title = 'Email '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
-            fl.write('\x1b[1;37m'+items[selbar][21].rjust(width)+'\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+'\n')
+            fl.write(attr2ansi(theme['ansi_desc'])+items[selbar][21].rjust(width)+'\n')
             title = 'Software '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
-            fl.write('\x1b[1;37m'+items[selbar][17].rjust(width)+'\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+'\n')
+            fl.write(attr2ansi(theme['ansi_desc'])+items[selbar][17].rjust(width)+'\n')
             title = 'Operating System '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\n')
-            fl.write('\x1b[1;37m'+items[selbar][18].rjust(width)+'\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+'\n')
+            fl.write(attr2ansi(theme['ansi_desc'])+items[selbar][18].rjust(width)+'\n')
             title = 'Nodes '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+attr2ansi(theme['ansi_desc'])+'\n')
             fl.write(str(items[selbar][16]).rjust(width)+'\n')
             title = 'Total Themes '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+attr2ansi(theme['ansi_desc'])+'\n')
             fl.write(str(items[selbar][12]).rjust(width)+'\n')
             title = 'Total Users '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+attr2ansi(theme['ansi_desc'])+'\n')
             fl.write(str(items[selbar][4]).rjust(width)+'\n')
             title = 'Total calls '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+attr2ansi(theme['ansi_desc'])+'\n')
             fl.write(str(items[selbar][8]).rjust(width)+'\n')
             title = 'Total Days Online '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+attr2ansi(theme['ansi_desc'])+'\n')
             fl.write(str(items[selbar][10]).rjust(width)+'\n')
             title = 'Calls Last 7 Days '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+attr2ansi(theme['ansi_desc'])+'\n')
             fl.write(str(items[selbar][6]).rjust(width)+'\n')
             title = 'Users Last 7 Days '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+attr2ansi(theme['ansi_desc'])+'\n')
             fl.write(str(items[selbar][7]).rjust(width)+'\n')
             title = 'Echonets '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+attr2ansi(theme['ansi_desc'])+'\n')
             en = items[selbar][20].split(';')
             if en:
               for e in en:
@@ -432,7 +555,7 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
             else:
               fl.write('Not Available'.rjust(width)+'\n')
             title = 'Message Bases '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+attr2ansi(theme['ansi_desc'])+'\n')
             en = items[selbar][19].split(';')
             if en:
               for e in en:
@@ -440,7 +563,7 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
             else:
               fl.write('Not Available'.rjust(width)+'\n')
             title = 'File Bases '
-            fl.write('\x1b[1;33m'+title+'\x1b[1;30m'+chr(196)*(width-len(title))+chr(191)+'\x1b[1;37m\n')
+            fl.write(attr2ansi(theme['ansi_title'])+title+attr2ansi(theme['ansi_div'])+chr(196)*(width-len(title))+chr(191)+attr2ansi(theme['ansi_desc'])+'\n')
             en = items[selbar][13].split(';')
             if en:
               for e in en:
@@ -451,10 +574,10 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
             for i in range(5): fl.write('\n')
               
           av = ansiviewer.ansiviewer(tempfile)
-          av.x1 = cnf['view_x1']
-          av.x2 = cnf['view_x2']
-          av.y1 = cnf['view_y1']
-          av.y2 = cnf['view_y2']-1
+          av.x1 = theme['detail_view'][0]
+          av.x2 = theme['detail_view'][2]
+          av.y1 = theme['detail_view'][1]
+          av.y2 = theme['detail_view'][3]-1
           av.drawansi()
         
               
@@ -564,7 +687,7 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
                 writeln(' ')
                 writeln(' ')
                 menucmd('F3',cfg['temp']+'tmp.ans')
-              drawbg(' '+name,'bbstree.ans')
+              drawbg(' '+name,'bbstree.ans',False)
           elif key == '[':
               av.movepgup()
               av.drawansi()
@@ -573,6 +696,45 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
               av.movepgdn()
               av.drawansi()
               redraw=False
+          elif key == 'T':
+              selecttheme()
+              sb=scrollbar
+              x1,y1,x2,y2 = theme['bbs_tree'][0],theme['bbs_tree'][1],theme['bbs_tree'][2],theme['bbs_tree'][3]
+              search_x, search_y, search_cl,search_width = theme['bbs_search'][0],theme['bbs_search'][1],theme['bbs_search'][2],theme['bbs_search_width']
+              hc,nc = theme['mbase_clsel'],theme['mbase_cl']
+              drawbg(' '+name,'bbstree.ans',False)
+          elif key == 'A':
+              if search_text:
+                  writexy(search_x,search_y,search_cl,search_text.ljust(theme['bbs_search_width'],' ').upper())
+                  search_text = search_text.upper()
+                  ind = search_index+1
+                  while ind<len(items) and not shutdown():
+                      if search_text in items[ind][1].upper():
+                          selbar = ind
+                          top  = ind
+                          search_index = ind
+                          break
+                      ind += 1
+          elif key == 'Y':
+              search_text = ''
+              search_index = 1
+              writexy(search_x,search_y,search_cl,' '*(theme['bbs_search_width']))
+          elif key == 'Q':
+              gotoxy(search_x,search_y)
+              textcolor(search_cl)
+              search_text = getstr(1,13,13,'')
+              if search_text:
+                  search_index = 1
+                  writexy(search_x,search_y,search_cl,search_text.ljust(theme['bbs_search_width'],' ').upper())
+                  search_text = search_text.upper()
+                  ind = search_index
+                  while ind<len(items) and not shutdown():
+                      if search_text in items[ind][1].upper():
+                          selbar = ind
+                          top  = ind
+                          search_index = ind
+                          break
+                      ind += 1
           elif key == 'D':
               write('|#V#1#26#'+str(10)+'# Download List #C-CSV Format,T-SyncTerm INI Format,M-MagiTerm INI Format,S-Short (Name|Address),F-Full ,Q-Quit#')
               ch = onekey(chr(13) + 'CFTMSQ', False)
@@ -596,13 +758,13 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
                 bbsdbcom.exportdb2sync(sql)
               elif ch == 'F':
                 bbsdbcom.exportdbfull(sql)
-              drawbg(' '+name,'bbstree.ans')
+              drawbg(' '+name,'bbstree.ans',False)
             
           elif key == 'H':
               write('|07|16|CL')
-              showfile(appdir+'images'+os.sep+'bbshelp.ans',0,False,False,False)
+              showfile(themedir+'bbshelp.ans',0,False,False,False)
               getkey()
-              drawbg(' '+name,'bbstree.ans')
+              drawbg(' '+name,'bbstree.ans',False)
               
 
     
@@ -610,5 +772,5 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
     return value    
   
 #drawbg('DATABASE')
-treelist(loadlist('list.csv'),cnf['tree_x1'],cnf['tree_y1'],cnf['tree_x2'],cnf['tree_y2'])
+treelist(loadlist('list.csv'),theme['main_list'][0],theme['main_list'][1],theme['main_list'][2],theme['main_list'][3])
 gotoxy(1,24)

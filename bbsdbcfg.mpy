@@ -17,7 +17,7 @@ import xmform
 tempdir = cfg['temp']
 logdir = cfg['logs']
 debug = False
-totalsteps = 9
+totalsteps = 11
 version = 1
 
 
@@ -139,7 +139,7 @@ def steps(num):
     cnf['share_fgroups']=False
     gotoxy(40,5)
     nodes = getstr(10,3,3,'4')
-    nodes = 3
+    if not nodes: nodes = 4
     try:
       cnf['nodes'] = int(nodes)
     except:
@@ -155,6 +155,7 @@ def steps(num):
     cnf['email']=''
     gotoxy(14,7)
     email = getstr(1,40,100,'')
+    if not email: email=''
     try:
       cnf['email'] = str(email)
     except:
@@ -164,6 +165,7 @@ def steps(num):
     cnf['dialup']=''
     gotoxy(13,7)
     dialup = getstr(4,40,40,'')
+    if not dialup: dialup=''
     try:
       cnf['dialup'] = str(dialup)
     except:
@@ -173,6 +175,7 @@ def steps(num):
     cnf['web']=''
     gotoxy(12,7)
     web = getstr(1,40,100,'')
+    if not web: web=''
     try:
       cnf['web'] = str(web)
     except:
@@ -182,12 +185,33 @@ def steps(num):
     cnf['login']=''
     gotoxy(14,7)
     login = getstr(1,40,100,'')
+    if not login: login=''
     try:
       cnf['login'] = str(login)
     except:
       cnf['login'] = ''
     bbsdbcom.savelist2json(cnf,cfg['data']+bbsdbvar.prefix+'.cfg')
-      
+  elif num == 10:
+    cnf["theme"] = 'default'
+    del tform.items[:]
+    bases = [ b['filename'] for b in bbsdbcom.getbases()]
+    themes = os.listdir(appdir+'images')
+    tform.additem(11,7,8,10,'Theme',13,8,20,20,'Stop','T','theme',themes)
+    
+    tform.drawall()
+    tform.show()
+    cnf['theme'] = tform.results['theme']
+    bbsdbcom.savelist2json(cnf,cfg['data']+bbsdbvar.prefix+'.cfg')
+  elif num == 11:
+    cnf['telnet']=''
+    while True and not shutdown():
+      gotoxy(16,8)
+      telnet = getstr(1,40,100,cnf['telnet'])
+      if telnet and (':' in telnet):
+        cnf['telnet'] = str(telnet)
+        break
+
+    bbsdbcom.savelist2json(cnf,cfg['data']+bbsdbvar.prefix+'.cfg')
     
   elif num == 0:
     bbsdbcom.writexy(3,8,8,cfg['data']+bbsdbvar.prefix+'.cfg')
@@ -206,32 +230,38 @@ def main():
     step = 0
     steps(step)
   
-  #other visual settings
-  cnf["vgroup_cl"] = 112 
-  cnf["dialog_title_at"] = 14 
-  cnf["tree_y2"] = 22 
-  cnf["tree_y1"] = 5 
-  cnf["view_x1"] = 27 
-  cnf["view_x2"] = 77 
-  cnf["dialog_text_at"] = 15 
-  cnf["group_fill_ch"] = 196 
-  cnf["vbase_clsel"] = 110 
-  cnf["mbase_clsel"] = 110 
-  cnf["vlink_cl"] = 11 
-  cnf["tree_x1"] = 3 
-  cnf["tree_x2"] = 22 
-  cnf["tree_title_at"] = 78 
-  cnf["group_cl"] = 79 
-  cnf["vgroup_fill_ch"] = 196 
-  cnf["tree_title_x"] = 3 
-  cnf["tree_title_y"] = 3 
-  cnf["view_y2"] = 23 
-  cnf["vbase_cl"] = 64 
-  cnf["view_y1"] = 2 
-  cnf["mbase_cl"] = 64 
-  cnf["vfile_cl"] = 7
-  cnf["version"] = version
   bbsdbcom.savelist2json(cnf,cfg['data']+bbsdbvar.prefix+'.cfg') 
      
 main()
 bbsdbcom.clrscr()
+
+'''
+theme = {}
+theme["vgroup_cl"] = 112 
+theme["dialog_title_at"] = 14 
+theme["tree_y2"] = 22 
+theme["tree_y1"] = 5 
+theme["view_x1"] = 27 
+theme["view_x2"] = 77 
+theme["dialog_text_at"] = 15 
+theme["group_fill_ch"] = 196 
+theme["vbase_clsel"] = 110 
+theme["mbase_clsel"] = 110 
+theme["vlink_cl"] = 11 
+theme["tree_x1"] = 3 
+theme["tree_x2"] = 22 
+theme["tree_title_at"] = 78 
+theme["group_cl"] = 79 
+theme["vgroup_fill_ch"] = 196 
+theme["tree_title_x"] = 3 
+theme["tree_title_y"] = 3 
+theme["view_y2"] = 23 
+theme["vbase_cl"] = 64 
+theme["view_y1"] = 2 
+theme["mbase_cl"] = 64 
+theme["vfile_cl"] = 7
+theme["version"] = version
+
+themefile=appdir+'images'+os.sep+'default'+os.sep+'theme.json'
+bbsdbcom.savelist2json(theme,themefile) 
+'''

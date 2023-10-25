@@ -416,7 +416,7 @@ class ansiviewer():
     write(s)
     
   def drawansi(self): # draw the visible area to the screen
-    for y in range(self.y2-self.y1+1):
+    for y in range(self.y2-self.y1+2):
       for x in range(self.x2-self.x1+1):
         self.writexy(self.x1+x,self.y1+y,self.matrixattr[y+self.top][x+self.left],self.matrixchar[y+self.top][x+self.left])
 

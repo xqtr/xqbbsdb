@@ -2,6 +2,7 @@ from mystic_bbs import *
 import sys,os
 
 sys.path.append(getcfg()['script']+'xqbbsdb'+os.sep)
+appdir = getcfg()['script']+'xqbbsdb'+os.sep
 import bbsdbvar 
 
 import datetime
@@ -232,15 +233,15 @@ def ansibox(x1,y1,x2,y2,box):
         write(box[3]+' '*(x2-x1-1)+box[4])
 
 def xwindow(title,typo,x1,y1,x2,y2):
-  #write('|#X#'+str(typo)+'#'+str(title)+'#'+str(x1)+'#'+str(y1)+'#'+str(x2)+'#'+str(y2)+'#')
-  ansibox(x1,y1,x2,y2,box12)
-  writexy(x1+3,y1,cnf['dialog_title_at'],title)  
+  write('|#X#'+str(typo)+'#'+str(title)+'#'+str(x1)+'#'+str(y1)+'#'+str(x2)+'#'+str(y2)+'#')
+  #ansibox(x1,y1,x2,y2,box12)
+  #writexy(x1+3,y1,theme['dialog_title_at'],title)  
   
 def msgdialog(title,text,p=True):
   a = len(text)
   if a<75:
     xwindow(title,1,40-(a // 2)-2,10,40+(a // 2)+2,14)
-    writexy(40-(a // 2),12,cnf['dialog_text_at'],text)
+    writexy(40-(a // 2),12,theme['dialog_text_at'],text)
   if p: pause() 
 
 def getbbsinfo(bbs):
@@ -386,6 +387,11 @@ if os.path.isfile(cfg['data']+bbsdbvar.prefix+'.cfg'):
 else:
   logerror('Could not load config file ['+cfg['data']+bbsdbvar.prefix+'.cfg]. Make sure it exists.')
   writeln('Could not load config file ['+cfg['data']+bbsdbvar.prefix+'.cfg]. Make sure it exists.')  
+  
+theme = {}
+themefile=appdir+'images'+os.sep+cnf['theme']+os.sep+'theme.json'
+if os.path.isfile(themefile):
+  theme = loadjson2list(themefile)
   
 '''  
 conf = {}
