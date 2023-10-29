@@ -1,6 +1,7 @@
 # xqbbsdb
 BBS Database MOD for Mystic BBS
- // What is it?
+
+> // What is it?
  
  > It's a BBS Database, that self populates its data from two sources. 
  The first source is the Message Bases of the Echonets your BBS is 
