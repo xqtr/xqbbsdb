@@ -774,3 +774,4 @@ def bbstree(name,sql,x1,y1,x2,y2,hc=15,nc=7,sel=0,sb=scrollbar):
 #drawbg('DATABASE')
 treelist(loadlist('list.csv'),theme['main_list'][0],theme['main_list'][1],theme['main_list'][2],theme['main_list'][3])
 gotoxy(1,24)
+write('|07|16|CL')

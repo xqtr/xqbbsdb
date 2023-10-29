@@ -69,7 +69,7 @@ def senddata():
   info['time'] = datetime.datetime.now().strftime("%H:%M:%S")
   info['name'] = mci2str('BN')
   info['location'] = mci2str('BL')
-  info['address'] = cfg['domain']
+  info['address'] = cnf['telnet']
   info['echonets'] = cnf['echonets']
   
   info['email'] = cnf['email']

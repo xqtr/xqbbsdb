@@ -21,7 +21,7 @@ Most Calls;mbase;20;select * from bbs order by totalcalls desc;|[Y16|12         
 With WebPages;mbase;20;select * from bbs where web<>'';|[Y16|12          BBSes that also have a webpage;bbs.ans
 Have DialUp;mbase;20;select * from bbs where dialup<>'';|[Y16|12       BBSes that also have a dialup connection;bbs.ans
 
-ECHONET ;group;20;1
+ECHONET ;group;20;-1
 fsxnet;mbase;20;select * from bbs where echonets like '%fsx%';|[Y16|[X39|09BBSes that are part of FSXNET;fsx.ans
 zeronet;mbase;20;select * from bbs where echonets like '%zero%';|[Y16|[X37|04BBSes that are part of Zer0NET;zero.ans
 dorenet;mbase;20;select * from bbs where echonets like '%surv%';|[Y16|[X37|13BBSes that are part of DoreNET;dore.ans
